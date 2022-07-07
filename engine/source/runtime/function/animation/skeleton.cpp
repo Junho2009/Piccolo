@@ -87,7 +87,7 @@ namespace Pilot
         }
         for (size_t i = 0; i < m_bone_count; i++)
         {
-            m_bones[i].update();
+            m_bones[i].update(); //[CR] 根据上面的 local space 的 transform，计算从根节点到当前节点的 transform
         }
     }
 

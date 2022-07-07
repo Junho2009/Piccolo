@@ -50,7 +50,7 @@ namespace Pilot
             }
 
             // Change position vector based on parent's orientation & scale
-            m_derived_position = parentOrientation * (parentScale * m_position);
+            m_derived_position = parentOrientation * (parentScale * m_position); //[CR] 为何计算 pos 时需要同时乘以 orientation、scale？
 
             // Add altered position vector to parents
             m_derived_position = m_derived_position + m_parent->_getDerivedPosition();

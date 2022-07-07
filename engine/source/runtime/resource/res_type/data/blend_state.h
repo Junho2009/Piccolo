@@ -78,6 +78,7 @@ namespace Pilot
         std::vector<std::string> m_blend_anim_skel_map_path;
         std::vector<float>       m_blend_weight;
         std::vector<std::string> m_blend_mask_file_path;
+        /** 存储对应的 clip 当前的时间比率（这个时间是已经过归一化的时间） */
         std::vector<float>       m_blend_ratio;
         virtual ~BlendState() override {}
         virtual float getLength() const override
@@ -98,10 +99,12 @@ namespace Pilot
         REFLECTION_BODY(BlendSpace1D);
 
     public:
+        /** [CR] 表示本 BlendSpace1D 所关心的动画信号，比如 speed、roatation，等等 */
         std::string m_key;
         // enum KeyType
         //{TypeDouble, TypeInt};
 
+        /** [CR] 与 m_blend_clip_file_path 中的 clip 一一对应，表示这些 clip 对信号 m_key 的值的最低要求 */
         std::vector<double> m_values;
 
         virtual ~BlendSpace1D()override {}

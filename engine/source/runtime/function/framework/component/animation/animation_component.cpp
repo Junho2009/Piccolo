@@ -22,7 +22,7 @@ namespace Pilot
             // no need to interpolate
             return;
         }
-        const auto& key_it    = m_signal.find(blend_state->m_key);
+        const auto& key_it    = m_signal.find(blend_state->m_key); //[CR] 取出本 BlendSpace1D 所关心的信号的数值
         double      key_value = 0;
         if (key_it != m_signal.end())
         {
@@ -31,7 +31,7 @@ namespace Pilot
                 key_value = key_it->second.number_value();
             }
         }
-        int max_smaller = -1;
+        int max_smaller = -1; //[CR] 根据当前的信号值，找到该数值落在哪两个 clip 之间（[ClipA: max_smaller, ClipB: max_smaller+1]），以便后续对这两个 clip 做插值（根据信号值算出来的各自的 weight）
         for (auto value : blend_state->m_values)
         {
             if (value <= key_value)
@@ -45,7 +45,7 @@ namespace Pilot
         }
 
         for (auto& weight : blend_state->m_blend_weight)
-        {
+        { //[CR] 初始化：将所有 clip 的 weight 都先置为 0
             weight = 0;
         }
         if (max_smaller == -1)
@@ -153,19 +153,27 @@ namespace Pilot
     {
 
         for (auto& ratio : blend_state->m_blend_ratio)
-        {
+        { //[CR] 为何需要都初始化为 desired_ratio？
             ratio = desired_ratio;
         }
         auto                       blendStateData = AnimationManager::getBlendStateWithClipData(*blend_state);
         std::vector<AnimationPose> poses;
         for (int i = 0; i < blendStateData.m_clip_count; i++)
         {
+            //[CR] 根据指定的 clip、指定的 weight、ratio、skel_map，得到该 clip 在该时刻（ratio）和权重（weight）下的 pose 数据（各 bones 相对于 bind pose 的 transform (local space?)）
             AnimationPose pose(blendStateData.m_blend_clip[i],
                                blendStateData.m_blend_weight[i],
                                blendStateData.m_blend_ratio[i],
                                blendStateData.m_blend_anim_skel_map[i]);
+
+            //[CR] 重置为 bind pose (A Pose or T Pose) 时的状态（各 bones 的 transform 都重置了）
             m_skeleton.resetSkeleton();
+
+            //[CR] 将当前 pose 应用到 bind pose，以将骨骼变成了当前 pose 所表示的样子——也就是各个 bones 变成了该 pose 下的 transform；
+            //  并且，各个 bones 自己也计算好了 model space 下自己的 transform ——即 skinning matrix 的左边那个矩阵 Mjm(t)
             m_skeleton.applyAdditivePose(pose);
+
+            //[CR] 把骨骼的当前 pose 数据转存到 'pose' 这个变量、并放入 poses 中，以便接下来对本 BlendState 中所有的 pose 做 blending
             m_skeleton.extractPose(pose);
             poses.push_back(pose);
         }

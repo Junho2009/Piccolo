@@ -35,6 +35,7 @@ namespace Pilot
         Vector3    m_scale {Vector3::UNIT_SCALE};
 
         // Cached combined orientation/position/scale.
+        //[CR] 从根节点一直累乘到当前节点的结果
         Quaternion m_derived_orientation {Quaternion::IDENTITY};
         Vector3    m_derived_position {Vector3::ZERO};
         Vector3    m_derived_scale {Vector3::UNIT_SCALE};
