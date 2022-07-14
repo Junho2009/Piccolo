@@ -21,6 +21,8 @@ namespace Pilot
             _jump_end_from_walk_run,
             _count
         };
+
+        std::string toStateName(States state);
         
         States m_state {States::_idle};
 

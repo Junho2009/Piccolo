@@ -116,6 +116,7 @@ namespace Pilot
             const float          phase          = blend_state.m_blend_ratio[clip_index];
             const AnimSkelMap&   anim_skel_map  = blend_state.m_blend_anim_skel_map[clip_index];
 
+            //[CR] 根据（归一化后的）ratio 来计算出精确的 "frame" 值——但算出来的是小数，实际上不存在这个 "frame"，所以后面还需要在这个值”左边和右边“的整数 frame 之间做 lerp
             float exact_frame        = phase * (animation_clip.total_frame - 1);
             int   current_frame_low  = floor(exact_frame);
             int   current_frame_high = ceil(exact_frame);

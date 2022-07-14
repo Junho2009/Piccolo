@@ -5,6 +5,45 @@
 
 namespace Pilot
 {
+    std::string AnimationFSM::toStateName(States state)
+    {
+        switch (state)
+        {
+        case States::_idle:
+            return "_idle";
+
+        case States::_walk_start:
+            return "_walk_start";
+
+        case States::_walk_run:
+            return "_walk_run";
+
+        case States::_walk_stop:
+            return "_walk_stop";
+
+        case States::_jump_start_from_idle:
+            return "_jump_start_from_idle";
+
+        case States::_jump_loop_from_idle:
+            return "_jump_loop_from_idle";
+
+        case States::_jump_end_from_idle:
+            return "_jump_end_from_idle";
+
+        case States::_jump_start_from_walk_run:
+            return "_jump_start_from_walk_run";
+
+        case States::_jump_loop_from_walk_run:
+            return "_jump_loop_from_walk_run";
+
+        case States::_jump_end_from_walk_run:
+            return "_jump_end_from_walk_run";
+
+        default:
+            return "[???]";
+        }
+    }
+
     AnimationFSM::AnimationFSM() {}
     float tryGetFloat(const json11::Json::object& json, const std::string& key, float default_value)
     {
@@ -31,7 +70,7 @@ namespace Pilot
         bool   is_jumping     = tryGetBool(signals, "jumping", false);
         float  speed          = tryGetFloat(signals, "speed", 0);
         bool   is_moving      = speed > 0.01f;
-        bool   start_walk_end = (States::_walk_start == m_state && is_clip_finish);//false;
+        bool   start_walk_end = (States::_walk_run == m_state && !is_moving);//false;
 
         switch (m_state)
         {
@@ -48,9 +87,19 @@ namespace Pilot
 
             
             case States::_walk_start:
-                if (is_clip_finish)
+                if (is_jumping)
                 {
-                    //start_walk_end = true;
+                    //NOTE: 相比 作业pdf 中多出来的转换条件，作用是实现从 _walk_start 到 _jump_start_from_walk_run 的直接跳转，
+                    //   避免在开始 walk 时即按下跳跃键、造成 “人的高度已经往上抬了、但动作还是 walk_start” 这样的奇怪表现。
+                    m_state = States::_jump_start_from_walk_run;
+                }
+                else if (!is_moving)
+                {
+                    //NOTE: 同理，在 _walk_start 的过程中，若已经停止移动，则切回到 _idle 状态。
+                    m_state = States::_idle;
+                }
+                else if (is_clip_finish)
+                {
                     m_state = States::_walk_run;
                 }
                 break;
@@ -81,32 +130,50 @@ namespace Pilot
 
             
             case States::_jump_start_from_idle:
-                /**** [4] ****/
+                if (is_clip_finish)
+                {
+                    m_state = States::_jump_loop_from_idle;
+                }
                 break;
 
             
             case States::_jump_loop_from_idle:
-                /**** [5] ****/
+                if (!is_jumping)
+                {
+                    m_state = States::_jump_end_from_idle;
+                }
                 break;
 
             
             case States::_jump_end_from_idle:
-                /**** [6] ****/
+                if (is_clip_finish)
+                {
+                    m_state = States::_idle;
+                }
                 break;
 
             
             case States::_jump_start_from_walk_run:
-                /**** [7] ****/
+                if (is_clip_finish)
+                {
+                    m_state = States::_jump_loop_from_walk_run;
+                }
                 break;
 
             
             case States::_jump_loop_from_walk_run:
-                /**** [8] ****/
+                if (!is_jumping)
+                {
+                    m_state = States::_jump_end_from_walk_run;
+                }
                 break;
 
             
             case States::_jump_end_from_walk_run:
-                /**** [9] ****/
+                if (is_clip_finish)
+                {
+                    m_state = States::_walk_run;
+                }
                 break;
 
             
@@ -114,7 +181,7 @@ namespace Pilot
                 break;
         }
 
-        LOG_INFO("FSM : speed: {}, last: {}, cur: {}", speed, last_state, m_state);
+        LOG_INFO("FSM : speed: {}, last: {}, cur: {}", speed, toStateName(last_state), toStateName(m_state));
         
         return last_state != m_state;
     }

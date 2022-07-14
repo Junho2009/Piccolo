@@ -45,7 +45,7 @@ namespace Pilot
         }
 
         for (auto& weight : blend_state->m_blend_weight)
-        { //[CR] 初始化：将所有 clip 的 weight 都先置为 0
+        { //[CR] 初始化：将所有 clip 的 weight 都先置为 0。由此可知，在 BlendSpace1D 中，真正参与本次 blend 的 clip 不会是全部的 clips——从下面计算 weight 的情况看，至少 1 个、之多 2 个。
             weight = 0;
         }
         if (max_smaller == -1)
@@ -66,6 +66,7 @@ namespace Pilot
                 // some error
             }
 
+            //[CR] 这条公式跟课件中的 "Calculate Blend Weight" 一致：weight2 = (CurSpeed - Speed1) / (Speed2 - Speed1)
             float weight = (key_value - l) / (r - l);
 
             blend_state->m_blend_weight[max_smaller + 1] = weight;
@@ -152,8 +153,10 @@ namespace Pilot
     void AnimationComponent::blend(float desired_ratio, BlendState* blend_state)
     {
 
+        //[CR] Q: 为何需要都初始化为 desired_ratio？
+        //     A: 因为 BlendState 中所有的 clips 都要受这个 ratio 影响——每个 clip 都根据 ratio 来算出自己的 ”目标 frame“（一般是通过插值得到，详见代码：Skeleton::applyAnimation）
         for (auto& ratio : blend_state->m_blend_ratio)
-        { //[CR] 为何需要都初始化为 desired_ratio？
+        {
             ratio = desired_ratio;
         }
         auto                       blendStateData = AnimationManager::getBlendStateWithClipData(*blend_state);
