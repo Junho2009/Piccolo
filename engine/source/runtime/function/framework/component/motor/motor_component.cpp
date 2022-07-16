@@ -75,10 +75,19 @@ namespace Pilot
         if (command >= (unsigned int)GameCommand::invalid)
             return;
 
+        //[CR] 计算移动速度-水平
         calculatedDesiredHorizontalMoveSpeed(command, delta_time);
+
+        //[CR] 计算移动速度-垂直
         calculatedDesiredVerticalMoveSpeed(command, delta_time);
+
+        //[CR] 计算移动方向-水平（注：在当前 demo 中，无需专门计算垂直方向，因为只考虑垂直向下的重力方向，而无法通过输入来控制垂直方向）
         calculatedDesiredMoveDirection(command, transform_component->getRotation());
+
+        //[CR] 计算 在没有物理碰撞的情况下、应该产生的位移值
         calculateDesiredDisplacement(delta_time);
+
+        //[CR] 计算最终的目标位置——考虑了物理碰撞后的结果
         calculateTargetPosition(transform_component->getPosition());
 
         transform_component->setPosition(m_target_position);
@@ -87,7 +96,12 @@ namespace Pilot
             m_parent_object.lock()->tryGetComponent<AnimationComponent>("AnimationComponent");
         if (animation_component != nullptr)
         {
+            //[CR] 这里计算 speed 的逻辑，m_target_position 跟 getPosition() 的结果不是一致的？
+            //  是的，根据 TransformComponent 中的实现，它内部同时维护了 "当前帧" 和 "下一帧" 的 transform 数据（m_transform_buffer），
+            //  在一帧内调 setXXX 时，设置的都是 "下一帧" 的数据；而 getXXX 获取的都是 "当前帧" 的数据。
+            //  然后，TransformComponent::Tick() 函数会在一开头将它们互换。
             animation_component->updateSignal("speed", m_target_position.distance(transform_component->getPosition()) / delta_time);
+
             animation_component->updateSignal("jumping", m_jump_state != JumpState::idle);
         }
     }
@@ -138,7 +152,7 @@ namespace Pilot
         const float gravity = physics_scene->getGravity().length();
 
         if (m_jump_state == JumpState::idle && m_controller->isTouchGround() == false)
-        {
+        { //[CR] isTouchGround() 一开始是 false，所以第一次调用本函数时，会进来这里。也就是说，在游戏刚运行的时候，从状态上来讲，角色是先从空中落到地面、再变成 idle 状态的。
             m_jump_state = JumpState::falling;
         }
 
@@ -207,7 +221,7 @@ namespace Pilot
             m_jump_state == JumpState::idle ? m_move_speed_ratio : m_jump_horizontal_speed_ratio;
         m_desired_displacement =
             m_desired_horizontal_move_direction * m_motor_res.m_move_speed * horizontal_speed_ratio * delta_time +
-            Vector3::UNIT_Z * m_vertical_move_speed * delta_time;
+            Vector3::UNIT_Z * m_vertical_move_speed * delta_time; //[CR] 这里直接使用 Vector3::UNIT_Z 作为 vertical_move_direction 了
     }
 
     void MotorComponent::calculateTargetPosition(const Vector3&& current_position)
