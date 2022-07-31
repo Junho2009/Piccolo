@@ -69,7 +69,29 @@ namespace Pilot
             vertical_displacement.length(),
             hits))
         {
-            final_position += hits[0].hit_distance * vertical_direction;
+            //TODO: 为了让角色在下落时、碰到墙壁还能落下，这里就需要区分【下落到地面】和【下落到墙壁】两种情况
+            
+            PhysicsHitInfo* vertical_hit = nullptr;
+            for (auto& hit : hits)
+            {
+                const float dot = hit.hit_normal.dotProduct(vertical_direction);
+                //LOG_INFO("dot: {}", dot);
+                if (dot >= 0.9) // 过滤掉跟垂直方向差异较大的 hit
+                {
+                    vertical_hit = &hit;
+                    break;
+                }
+            }
+
+            if (nullptr != vertical_hit)
+            {
+                final_position += vertical_hit->hit_distance * vertical_direction;
+            }
+            else
+            {
+                LOG_INFO("vertical_hit is nullptr.");
+                final_position += vertical_displacement; // Hack... sweep 测试通过，说明垂直方向是有发生位移的。既然没找到垂直方向的 hit，就直接处理下落？
+            }
         }
         else
         {
