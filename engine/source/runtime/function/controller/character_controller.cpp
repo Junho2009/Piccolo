@@ -61,45 +61,6 @@ namespace Pilot
         
         world_transform.m_position -= 0.1f * Vector3::UNIT_Z; //[CR] 物理检测计算完毕，恢复之前所做的偏移
 
-        // vertical pass
-        if (physics_scene->sweep(
-            m_rigidbody_shape,
-            world_transform.getMatrix(),
-            vertical_direction,
-            vertical_displacement.length(),
-            hits))
-        {
-            //TODO: 为了让角色在下落时、碰到墙壁还能落下，这里就需要区分【下落到地面】和【下落到墙壁】两种情况
-            
-            PhysicsHitInfo* vertical_hit = nullptr;
-            for (auto& hit : hits)
-            {
-                const float dot = hit.hit_normal.dotProduct(vertical_direction);
-                //LOG_INFO("dot: {}", dot);
-                if (dot >= 0.9) // 过滤掉跟垂直方向差异较大的 hit
-                {
-                    vertical_hit = &hit;
-                    break;
-                }
-            }
-
-            if (nullptr != vertical_hit)
-            {
-                final_position += vertical_hit->hit_distance * vertical_direction;
-            }
-            else
-            {
-                LOG_INFO("vertical_hit is nullptr.");
-                final_position += vertical_displacement; // Hack... sweep 测试通过，说明垂直方向是有发生位移的。既然没找到垂直方向的 hit，就直接处理下落？
-            }
-        }
-        else
-        {
-            final_position += vertical_displacement;
-        }
-
-        hits.clear();
-
         // horizontal pass
         if (physics_scene->sweep(
             m_rigidbody_shape,
@@ -115,6 +76,68 @@ namespace Pilot
         {
             final_position += horizontal_displacement;
         }
+
+        hits.clear();
+
+        world_transform = Transform(
+            final_position,
+            Quaternion::IDENTITY,
+            Vector3::UNIT_SCALE);
+
+        // vertical pass
+        if (physics_scene->sweep(
+            m_rigidbody_shape,
+            world_transform.getMatrix(),
+            vertical_direction,
+            vertical_displacement.length(),
+            hits))
+        {
+            //TODO: 为了让角色在下落时、碰到墙壁还能落下，这里就需要区分【下落到地面】和【下落到墙壁】两种情况
+
+            final_position += hits[0].hit_distance * vertical_direction;
+            
+            /*PhysicsHitInfo* vertical_hit = nullptr;
+            for (auto& hit : hits)
+            {
+                const Vector3 hit_normal = hit.hit_normal.normalisedCopy();
+                const float dot = hit_normal.dotProduct(vertical_direction);
+                //LOG_INFO("dot: {}", dot)
+                if (dot >= 0.9) // 过滤掉跟垂直方向差异较大的 hit
+                {
+                    vertical_hit = &hit;
+                    break;
+                }
+                else
+                {
+                    int iii = 0;
+                    ++iii;
+                    LOG_INFO("vertical_hit++3 ")
+                }
+            }
+
+            if (nullptr != vertical_hit)
+            {
+                const Vector3 n = vertical_hit->hit_normal;
+                LOG_INFO("vertical_hit--------1 hit dir: ({}, {}, {})", n.x, n.y, n.z)
+                final_position += vertical_hit->hit_distance * vertical_direction;
+            }
+            else
+            {
+                const Vector3 ver_disp = vertical_displacement;
+                LOG_INFO("vertical_hit====2 null. ver_disp: ({}, {}, {})", ver_disp.x, ver_disp.y, ver_disp.z)
+
+                // Hack... sweep 测试通过，说明垂直方向是有发生位移的。既然没找到垂直方向的 hit，就直接处理下落？
+                //   但是，这样可能会卡在空中，因为加上 vertical_displacement 之后，并不能确保角色可以回到地面。
+                //   然而，目前还没找到能让角色移到地面的信息（和方法）。
+                final_position += vertical_displacement;
+            }*/
+        }
+        else
+        {
+            final_position += vertical_displacement;
+        }
+
+        hits.clear();
 
         return final_position;
     }
