@@ -45,7 +45,7 @@ namespace Pilot
         }
 
         for (auto& weight : blend_state->m_blend_weight)
-        { //[CR] 初始化：将所有 clip 的 weight 都先置为 0。由此可知，在 BlendSpace1D 中，真正参与本次 blend 的 clip 不会是全部的 clips——从下面计算 weight 的情况看，至少 1 个、之多 2 个。
+        { //[CR] 初始化：将所有 clip 的 weight 都先置为 0。由此可知，在 BlendSpace1D 中，真正参与本次 blend 的 clip 不会是全部的 clips——从下面计算 weight 的情况看，至少 1 个、至多 2 个。
             weight = 0;
         }
         if (max_smaller == -1)

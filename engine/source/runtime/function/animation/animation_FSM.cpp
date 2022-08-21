@@ -89,7 +89,7 @@ namespace Pilot
             case States::_walk_start:
                 if (is_jumping)
                 {
-                    //NOTE: 相比 作业pdf 中多出来的转换条件，作用是实现从 _walk_start 到 _jump_start_from_walk_run 的直接跳转，
+                    //NOTE: 相比 作业pdf 所多出来的转换条件，作用是实现从 _walk_start 到 _jump_start_from_walk_run 的直接跳转，
                     //   避免在开始 walk 时即按下跳跃键、造成 “人的高度已经往上抬了、但动作还是 walk_start” 这样的奇怪表现。
                     m_state = States::_jump_start_from_walk_run;
                 }
@@ -181,7 +181,7 @@ namespace Pilot
                 break;
         }
 
-        LOG_INFO("FSM : speed: {}, last: {}, cur: {}", speed, toStateName(last_state), toStateName(m_state));
+        //LOG_INFO("FSM : speed: {}, last: {}, cur: {}", speed, toStateName(last_state), toStateName(m_state));
         
         return last_state != m_state;
     }

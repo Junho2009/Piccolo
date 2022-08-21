@@ -222,6 +222,7 @@ namespace Pilot
         m_desired_displacement =
             m_desired_horizontal_move_direction * m_motor_res.m_move_speed * horizontal_speed_ratio * delta_time +
             Vector3::UNIT_Z * m_vertical_move_speed * delta_time; //[CR] 这里直接使用 Vector3::UNIT_Z 作为 vertical_move_direction 了
+        //[CR] 另外，当 m_vertical_move_speed 的值为 0 时，垂直方向的向量就是 0，这样在 CharacterController::move 中，垂直方向的 sweep 检测就始终返回 false
     }
 
     void MotorComponent::calculateTargetPosition(const Vector3&& current_position)

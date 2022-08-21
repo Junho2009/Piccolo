@@ -261,7 +261,7 @@ namespace Pilot
 
         shape_global_transform.decomposition(global_position, global_scale, global_rotation);
 
-        JPH::Shape* jph_shape = toShape(shape, global_scale);
+        JPH::Shape* jph_shape = toShape(shape, global_scale); //[CR] 根据 RigidBodyShape 来生成 Jolt Physics Engine 的 Shape 对象
 
         if (jph_shape == nullptr)
         {
@@ -288,6 +288,8 @@ namespace Pilot
         out_hits.clear();
         out_hits.resize(sweep_results.size());
 
+        // 将 JPH::ShapeCastResult 对象（物理引擎的查询结果 对象） 转换为 PhysicsHitInfo 类型的对象（游戏引擎所定义的查询结果 对象）。
+        //   （这样做的好处是，游戏引擎层对物理引擎做了抽象，可替换为其他物理引擎，而无需改动游戏引擎中、对物理引擎的使用逻辑。）
         for (size_t index = 0; index < sweep_results.size(); index++)
         {
             const JPH::ShapeCastResult& sweep_result = sweep_results[index];
