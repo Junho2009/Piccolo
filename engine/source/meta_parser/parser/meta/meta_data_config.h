@@ -11,4 +11,7 @@ namespace NativeProperty
 
     const auto WhiteListFields = "WhiteListFields";
 
+    const auto ValueMin = "Min";
+    const auto ValueMax = "Max";
+
 } // namespace NativeProperty

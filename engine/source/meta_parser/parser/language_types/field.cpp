@@ -19,6 +19,15 @@ bool Field::shouldCompile(void) const { return isAccessible(); }
 
 bool Field::isAccessible(void) const
 {
+    /* [CR] DEBUG
+    bool bHasMinFlag = m_meta_data.getFlag(NativeProperty::ValueMin);
+    bool bHasMaxFlag = m_meta_data.getFlag(NativeProperty::ValueMax);
+    if (bHasMinFlag || bHasMaxFlag)
+    {
+        std::cout << "#### Junho - bHasMinFlag: " << bHasMinFlag << ", bHasMaxFlag: " << bHasMaxFlag << std::endl;
+    }
+    */
+    
     return ((m_parent->m_meta_data.getFlag(NativeProperty::Fields) ||
              m_parent->m_meta_data.getFlag(NativeProperty::All)) &&
             !m_meta_data.getFlag(NativeProperty::Disable)) ||

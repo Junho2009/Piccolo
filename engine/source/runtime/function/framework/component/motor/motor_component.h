@@ -46,7 +46,7 @@ namespace Piccolo
         void calculateDesiredDisplacement(float delta_time);
         void calculateTargetPosition(const Vector3&& current_position);
 
-        META(Enable)
+        META(Enable,Min:12,Max:345)
         MotorComponentRes m_motor_res;
 
         float m_move_speed_ratio {0.f};

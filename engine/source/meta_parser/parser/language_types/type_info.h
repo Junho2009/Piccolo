@@ -6,6 +6,9 @@
 #include "meta/meta_info.h"
 #include "parser/parser.h"
 
+/**
+ * [CR] clang 解析完源代码后、根据类型定义所生成的 ”类型信息“ 对象。
+ */
 class TypeInfo
 {
 public:

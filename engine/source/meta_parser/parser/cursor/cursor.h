@@ -2,6 +2,9 @@
 
 #include "cursor_type.h"
 
+/**
+ * [CR] 这是 Piccolo Parser 自己所定义的 Cursor
+ */
 class Cursor
 {
 public:

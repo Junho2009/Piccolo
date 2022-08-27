@@ -9,8 +9,11 @@ MetaInfo::MetaInfo(const Cursor& cursor)
     for (auto& child : cursor.getChildren())
     {
 
+        //[CR] 只处理 "annotation" 这种 __attribute__。这是 Piccolo 的反射宏中使用的。
         if (child.getKind() != CXCursor_AnnotateAttr)
             continue;
+        
+        //printf("### Junho - MetaInfo-Ctor - child name: %s\n", child.getDisplayName().c_str()); //[CR] DEBUG
 
         for (auto& prop : extractProperties(child))
             m_properties[prop.first] = prop.second;
@@ -32,6 +35,7 @@ std::vector<MetaInfo::Property> MetaInfo::extractProperties(const Cursor& cursor
     std::vector<Property> ret_list;
 
     auto propertyList = cursor.getDisplayName();
+    //printf("### Junho - propertyList: %s\n", propertyList.c_str()); //[CR] DEBUG
 
     auto&& properties = Utils::split(propertyList, ",");
 
@@ -45,8 +49,10 @@ std::vector<MetaInfo::Property> MetaInfo::extractProperties(const Cursor& cursor
         {
             continue;
         }
-        ret_list.emplace_back(temp_string,
-                              item_details.size() > 1 ? Utils::trim(item_details[1], white_space_string) : "");
+        auto&& temp_value_str = item_details.size() > 1 ? Utils::trim(item_details[1], white_space_string) : "";
+        ret_list.emplace_back(temp_string, temp_value_str);
+
+        //printf("### Junho - property - name: %s, value: %s\n", temp_string.c_str(), temp_value_str.c_str()); //[CR] DEBUG
     }
     return ret_list;
 }

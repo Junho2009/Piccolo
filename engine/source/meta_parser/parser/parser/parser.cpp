@@ -139,6 +139,10 @@ bool MetaParser::parseProject()
 
 int MetaParser::parse(void)
 {
+    /**
+     * [CR] 生成包含工程内所有头文件的 parser_header.h 文件，其路径即为 m_source_include_file_name。
+     *   目前看来，吧所有头文件集合到一个文件中，可能主要是为了方便给 clang 一次性进行解析处理。
+     */
     bool parse_include_ = parseProject();
     if (!parse_include_)
     {
@@ -172,8 +176,14 @@ int MetaParser::parse(void)
         return -2;
     }
 
+    /*
+     * [CR] 使用 clang 来解析所有头文件。
+     * clang_createTranslationUnitFromSourceFile: 根据源文件，创建一个（编译前端）的【翻译单元】。
+     */
     m_translation_unit = clang_createTranslationUnitFromSourceFile(
         m_index, m_source_include_file_name.c_str(), static_cast<int>(arguments.size()), arguments.data(), 0, nullptr);
+
+    //[CR] 根据指定的翻译单元，获取它的 cursor，以便接下来通过遍历它来获取翻译单元里的所有解析对象？
     auto cursor = clang_getTranslationUnitCursor(m_translation_unit);
 
     Namespace temp_namespace;
@@ -207,7 +217,7 @@ void MetaParser::buildClassAST(const Cursor& cursor, Namespace& current_namespac
 
         // actual definition and a class or struct
         if (child.isDefinition() && (kind == CXCursor_ClassDecl || kind == CXCursor_StructDecl))
-        {
+        { //[CR] 如果 cursor 所指向的是 class 或 struct，则构建【Class】这个语法树层面的 “类定义” 对象，
             auto class_ptr = std::make_shared<Class>(child, current_namespace);
 
             TRY_ADD_LANGUAGE_TYPE(class_ptr, classes);

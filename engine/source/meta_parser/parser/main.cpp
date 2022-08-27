@@ -55,7 +55,10 @@ int parse(std::string project_input_file_name,
     MetaParser parser(
         project_input_file_name, source_include_file_name, include_path, sys_include, module_name, is_show_errors);
 
+    //[CR] include_path: 参与解析和生成 meta 信息的所有源代码的目录。
+    //  比如：【Parsing in D:/Work/Study/GAMES104/Piccolo/engine/source】。
     std::cout << "Parsing in " << include_path << std::endl;
+    
     int result = parser.parse();
     if (0 != result)
     {
