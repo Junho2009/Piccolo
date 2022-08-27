@@ -10,7 +10,7 @@ namespace Piccolo
         const char* k_unknown      = "Unknown";
 
         static std::map<std::string, ClassFunctionTuple*>      m_class_map;
-        static std::multimap<std::string, FieldFunctionTuple*> m_field_map;
+        static std::multimap<std::string, FieldFunctionTuple*> m_field_map; //[CR] 这里用了 multimap，因为一个类型中可能有多个 field，而这里将类型名作为key，因此可能会有多个相同的 key。
         static std::map<std::string, ArrayFunctionTuple*>      m_array_map;
 
         void TypeMetaRegisterinterface::registerToFieldMap(const char* name, FieldFunctionTuple* value)
