@@ -43,6 +43,9 @@ namespace Utils
 
     std::string formatQualifiedName(std::string& source_string)
     {
+        //[CR] 根据 “commonReflectionFile.mustache” 中的【ArrayFunctionTuple* f_array_tuple_{{vector_useful_name}}】了解到，
+        //  这里只需要把 不合法的变量名 转换成合法的即可。
+        //  所以，这里只要把这些在 C++ 中不适合作为变量名的字符替换成合法字符即可，而无需考虑反向解析的问题。
         Utils::replace(source_string, '<', 'L');
         Utils::replace(source_string, ':', 'S');
         Utils::replace(source_string, '>', 'R');

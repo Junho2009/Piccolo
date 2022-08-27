@@ -13,11 +13,19 @@ namespace Piccolo
         static std::multimap<std::string, FieldFunctionTuple*> m_field_map; //[CR] 这里用了 multimap，因为一个类型中可能有多个 field，而这里将类型名作为key，因此可能会有多个相同的 key。
         static std::map<std::string, ArrayFunctionTuple*>      m_array_map;
 
+        /**
+         * [CR] 该函数是在 “注册”反射代码 的时候被调用的，反射代码调用的是【REGISTER_FIELD_TO_MAP】宏。
+         *   作用：注册后，可获取某反射类型（参数 “name” 就是该类型的名称）中、某个反射字段 的函数集（getter / setter / getClassName / ... 详见反射代码模板 “commonReflectionFile.mustache”）
+         */
         void TypeMetaRegisterinterface::registerToFieldMap(const char* name, FieldFunctionTuple* value)
         {
             m_field_map.insert(std::make_pair(name, value));
         }
 
+        /**
+         * [CR] 该函数是在 “注册”反射代码 的时候被调用的，反射代码调用的是【REGISTER_ARRAY_TO_MAP】宏。
+         *   作用：注册后，可获取 某个数组类型（目前基本上都是 std::vector<xxx>）的函数集（getter / setter / getArrayTypeName / ... 详见反射代码模板 “commonReflectionFile.mustache”）
+         */
         void TypeMetaRegisterinterface::registerToArrayMap(const char* name, ArrayFunctionTuple* value)
         {
             if (m_array_map.find(name) == m_array_map.end())
@@ -30,6 +38,10 @@ namespace Piccolo
             }
         }
 
+        /**
+         * [CR] 该函数是在 “注册”反射代码 的时候被调用的，反射代码调用的是【REGISTER_BASE_CLASS_TO_MAP】宏。
+         *   作用：注册后，可获取 某个反射类型（参数 “name” 就是该类型的名称）的 基类
+         */
         void TypeMetaRegisterinterface::registerToClassMap(const char* name, ClassFunctionTuple* value)
         {
             if (m_class_map.find(name) == m_class_map.end())

@@ -24,6 +24,8 @@ namespace Generator
             class_def.set("class_has_base", true);
             for (int index = 0; index < class_temp->m_base_classes.size(); ++index)
             {
+                //[CR] 这里似乎有问题？根据代码渲染的机制，渲染后的内容应是【展开】的，而不是渲染到一个 循环体 里面的。
+                //  TODO: 测试一下：让 反射类A 同时继承 反射类B和C
                 Mustache::data class_base_class_def;
                 class_base_class_def.set("class_base_class_name", class_temp->m_base_classes[index]->name);
                 class_base_class_def.set("class_base_class_index", std::to_string(index));
