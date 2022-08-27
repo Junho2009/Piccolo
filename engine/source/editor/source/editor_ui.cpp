@@ -31,6 +31,9 @@
 namespace Piccolo
 {
     std::vector<std::pair<std::string, bool>> g_editor_node_state_array;
+    /**
+     *[CR] 编辑器的树状节点层级（TreeNode）。初始值 -1 表示无任何层级。
+     */
     int                                       g_node_depth = -1;
     void                                      DrawVecControl(const std::string& label,
                                                              Piccolo::Vector3&    values,
@@ -86,7 +89,7 @@ namespace Piccolo
                 degrees_val.z = trans_ptr->m_rotation.getYaw(false).valueDegrees();
 
                 DrawVecControl("Position", trans_ptr->m_position);
-                DrawVecControl("Rotation", degrees_val);
+                DrawVecControl("Rotation", degrees_val); //[CR] 在编辑器中以 欧拉角 的形式来展示、以及供用户编辑。
                 DrawVecControl("Scale", trans_ptr->m_scale);
 
                 trans_ptr->m_rotation.w = Math::cos(Math::degreesToRadians(degrees_val.x / 2)) *
@@ -142,7 +145,8 @@ namespace Piccolo
                 std::string label = "##" + name;
                 ImGui::Text("%s", name.c_str());
                 ImGui::SameLine();
-                ImGui::InputFloat(label.c_str(), static_cast<float*>(value_ptr));
+                //ImGui::InputFloat(label.c_str(), static_cast<float*>(value_ptr));
+                ImGui::DragFloat(label.c_str(), static_cast<float*>(value_ptr));
             }
             else
             {
@@ -150,7 +154,8 @@ namespace Piccolo
                 {
                     std::string full_label = "##" + getLeafUINodeParentLabel() + name;
                     ImGui::Text("%s", (name + ":").c_str());
-                    ImGui::InputFloat(full_label.c_str(), static_cast<float*>(value_ptr));
+                    //ImGui::InputFloat(full_label.c_str(), static_cast<float*>(value_ptr));
+                    ImGui::DragFloat(full_label.c_str(), static_cast<float*>(value_ptr));
                 }
             }
         };
@@ -401,61 +406,79 @@ namespace Piccolo
 
     void EditorUI::createLeafNodeUI(Reflection::ReflectionInstance& instance)
     {
-        Reflection::FieldAccessor* fields;
+        Reflection::FieldAccessor* fields; //[CR] 对于该实例（instance）的数据类型（该类型肯定被标记为了反射类型），其里面所有的 “反射字段” 的 访问器（FieldAccessor）。
         int                        fields_count = instance.m_meta.getFieldsList(fields);
 
         for (size_t index = 0; index < fields_count; index++)
         {
             auto field = fields[index];
+
+            //[CR] 数组类型的字段
             if (field.isArrayType())
             {
                 Reflection::ArrayAccessor array_accessor;
                 if (Reflection::TypeMeta::newArrayAccessorFromName(field.getFieldTypeName(), array_accessor))
                 {
-                    void* field_instance = field.get(instance.m_instance);
+                    void* field_instance = field.get(instance.m_instance); //[CR] 该数组字段的实例
                     int   array_count    = array_accessor.getSize(field_instance);
+                    
                     m_editor_ui_creator["TreeNodePush"](
                         std::string(field.getFieldName()) + "[" + std::to_string(array_count) + "]", nullptr);
+                    
                     auto item_type_meta_item =
-                        Reflection::TypeMeta::newMetaFromName(array_accessor.getElementTypeName());
+                        Reflection::TypeMeta::newMetaFromName(array_accessor.getElementTypeName()); //[CR] 获取数据元素的 TypeMeta。
                     auto item_ui_creator_iterator = m_editor_ui_creator.find(item_type_meta_item.getTypeName());
                     for (int index = 0; index < array_count; index++)
                     {
                         if (item_ui_creator_iterator == m_editor_ui_creator.end())
-                        {
+                        { //[CR] 没找到对应的 creator，因此数组元素不是原子类型，需要进一步拆分——进一步调用 createClassUI()。
                             m_editor_ui_creator["TreeNodePush"]("[" + std::to_string(index) + "]", nullptr);
+
+                            //[CR] 创建该数组元素（array[index]）的 ReflectionInstance。
                             auto object_instance = Reflection::ReflectionInstance(
                                 Piccolo::Reflection::TypeMeta::newMetaFromName(item_type_meta_item.getTypeName().c_str()),
-                                array_accessor.get(index, field_instance));
+                                array_accessor.get(index, field_instance) //[CR] 获取该数组元素的实例指针。
+                            );
+                            
                             createClassUI(object_instance);
+                            
                             m_editor_ui_creator["TreeNodePop"]("[" + std::to_string(index) + "]", nullptr);
                         }
                         else
                         {
+                            /*[CR] 这段应该是冗余代码
                             if (item_ui_creator_iterator == m_editor_ui_creator.end())
                             {
                                 continue;
-                            }
+                            }*/
+
+                            //[CR] 数组元素是原子类型，可以直接绘制出来。
                             m_editor_ui_creator[item_type_meta_item.getTypeName()](
                                 "[" + std::to_string(index) + "]", array_accessor.get(index, field_instance));
                         }
                     }
+                    
                     m_editor_ui_creator["TreeNodePop"](field.getFieldName(), nullptr);
                 }
             }
+
+            
             auto ui_creator_iterator = m_editor_ui_creator.find(field.getFieldTypeName());
             if (ui_creator_iterator == m_editor_ui_creator.end())
-            {
+            { //[CR] 没找到对应的 creator，因此该字段的类型不是原子类型，需要进一步拆分——进一步调用 createClassUI()。
                 Reflection::TypeMeta field_meta =
                     Reflection::TypeMeta::newMetaFromName(field.getFieldTypeName());
                 if (field.getTypeMeta(field_meta))
                 {
                     auto child_instance =
-                        Reflection::ReflectionInstance(field_meta, field.get(instance.m_instance));
+                        Reflection::ReflectionInstance(field_meta
+                            , field.get(instance.m_instance) //[CR] 获取该字段的实例指针。
+                        );
                     m_editor_ui_creator["TreeNodePush"](field_meta.getTypeName(), nullptr);
                     createClassUI(child_instance);
                     m_editor_ui_creator["TreeNodePop"](field_meta.getTypeName(), nullptr);
                 }
+                /*[CR] 这段应该是冗余代码
                 else
                 {
                     if (ui_creator_iterator == m_editor_ui_creator.end())
@@ -465,9 +488,11 @@ namespace Piccolo
                     m_editor_ui_creator[field.getFieldTypeName()](field.getFieldName(),
                                                                          field.get(instance.m_instance));
                 }
+                */
             }
             else
             {
+                //[CR] 本字段为原子类型，直接绘制。
                 m_editor_ui_creator[field.getFieldTypeName()](field.getFieldName(),
                                                                      field.get(instance.m_instance));
             }
