@@ -121,7 +121,9 @@ namespace Piccolo
             g_runtime_global_context.m_world_manager->getCurrentActivePhysicsScene().lock();
         ASSERT(physics_scene);
 
-        if (m_motor_res.m_jump_height == 0.f)
+        /*if (m_motor_res.m_jump_height == 0.f)
+            return;*/
+        if (m_motor_res.m_jump_initial_velocity == 0.f)
             return;
 
         const float gravity = physics_scene->getGravity().length();
@@ -131,7 +133,13 @@ namespace Piccolo
             if ((unsigned int)GameCommand::jump & command)
             {
                 m_jump_state                  = JumpState::rising;
-                m_vertical_move_speed         = Math::sqrt(m_motor_res.m_jump_height * 2 * gravity);
+
+                //[CR] 这是由 “速度-位移 公式” 而来，v0 == 0，故 v^2 = 2aS.
+                //m_vertical_move_speed         = Math::sqrt(m_motor_res.m_jump_height * 2 * gravity);
+
+                //[CR] 直接用初速度来初始化 vertical_move_speed
+                m_vertical_move_speed = m_motor_res.m_jump_initial_velocity;
+                
                 m_jump_horizontal_speed_ratio = m_move_speed_ratio;
             }
             else

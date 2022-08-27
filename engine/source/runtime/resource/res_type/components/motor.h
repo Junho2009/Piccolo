@@ -43,7 +43,12 @@ namespace Piccolo
         ~MotorComponentRes();
 
         float m_move_speed { 0.f};
-        float m_jump_height {0.f};
+        
+        //float m_jump_height {0.f};
+
+        //[CR] 起跳时的初速度
+        float m_jump_initial_velocity {0.f};
+        
         float m_max_move_speed_ratio { 0.f};
         float m_max_sprint_speed_ratio { 0.f};
         float m_move_acceleration {0.f};
