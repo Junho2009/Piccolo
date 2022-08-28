@@ -47,7 +47,8 @@ namespace Piccolo
         //float m_jump_height {0.f};
 
         //[CR] 起跳时的初速度
-        float m_jump_initial_velocity {0.f};
+        META(DragEdit, Min:1.5, Max:20, Step:0.1)
+        float m_jump_initial_velocity {10.f};
         
         float m_max_move_speed_ratio { 0.f};
         float m_max_sprint_speed_ratio { 0.f};

@@ -47,7 +47,7 @@ namespace Piccolo
     EditorUI::EditorUI()
     {
         const auto& asset_folder            = g_runtime_global_context.m_config_manager->getAssetFolder();
-        m_editor_ui_creator["TreeNodePush"] = [this](const std::string& name, void* value_ptr) -> void {
+        m_editor_ui_creator["TreeNodePush"] = [this](const std::string& name, void* value_ptr, Reflection::FieldAccessor* field_accessor) -> void {
             static ImGuiTableFlags flags      = ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings;
             bool                   node_state = false;
             g_node_depth++;
@@ -69,7 +69,7 @@ namespace Piccolo
             }
             g_editor_node_state_array.emplace_back(std::pair(name.c_str(), node_state));
         };
-        m_editor_ui_creator["TreeNodePop"] = [this](const std::string& name, void* value_ptr) -> void {
+        m_editor_ui_creator["TreeNodePop"] = [this](const std::string& name, void* value_ptr, Reflection::FieldAccessor* field_accessor) -> void {
             if (g_editor_node_state_array[g_node_depth].second)
             {
                 ImGui::TreePop();
@@ -77,7 +77,7 @@ namespace Piccolo
             g_editor_node_state_array.pop_back();
             g_node_depth--;
         };
-        m_editor_ui_creator["Transform"] = [this](const std::string& name, void* value_ptr) -> void {
+        m_editor_ui_creator["Transform"] = [this](const std::string& name, void* value_ptr, Reflection::FieldAccessor* field_accessor) -> void {
             if (g_editor_node_state_array[g_node_depth].second)
             {
                 Transform* trans_ptr = static_cast<Transform*>(value_ptr);
@@ -121,7 +121,7 @@ namespace Piccolo
                 g_editor_global_context.m_scene_manager->drawSelectedEntityAxis();
             }
         };
-        m_editor_ui_creator["int"] = [this](const std::string& name, void* value_ptr) -> void {
+        m_editor_ui_creator["int"] = [this](const std::string& name, void* value_ptr, Reflection::FieldAccessor* field_accessor) -> void {
             if (g_node_depth == -1)
             {
                 std::string label = "##" + name;
@@ -139,27 +139,43 @@ namespace Piccolo
                 }
             }
         };
-        m_editor_ui_creator["float"] = [this](const std::string& name, void* value_ptr) -> void {
+        m_editor_ui_creator["float"] = [this](const std::string& name, void* value_ptr, Reflection::FieldAccessor* field_accessor) -> void {
+            std::string label = "##" + name;
             if (g_node_depth == -1)
             {
-                std::string label = "##" + name;
                 ImGui::Text("%s", name.c_str());
                 ImGui::SameLine();
-                //ImGui::InputFloat(label.c_str(), static_cast<float*>(value_ptr));
-                ImGui::DragFloat(label.c_str(), static_cast<float*>(value_ptr));
             }
             else
             {
-                if (g_editor_node_state_array[g_node_depth].second)
+                if (!g_editor_node_state_array[g_node_depth].second)
                 {
-                    std::string full_label = "##" + getLeafUINodeParentLabel() + name;
-                    ImGui::Text("%s", (name + ":").c_str());
-                    //ImGui::InputFloat(full_label.c_str(), static_cast<float*>(value_ptr));
-                    ImGui::DragFloat(full_label.c_str(), static_cast<float*>(value_ptr));
+                    return;
                 }
+                
+                label = "##" + getLeafUINodeParentLabel() + name;
+                ImGui::Text("%s", (name + ":").c_str());
+            }
+                
+            const std::string step_value = field_accessor->getMetaTagValue("Step");
+            float step = step_value.empty() ? 0 : std::atof(step_value.c_str());
+
+            if (field_accessor->hasMetaTag("DragEdit"))
+            {
+                const std::string min_str = field_accessor->getMetaTagValue("Min");
+                float min = min_str.empty() ? 0 : std::atof(min_str.c_str());
+
+                const std::string max_str = field_accessor->getMetaTagValue("Max");
+                float max = max_str.empty() ? 0 : std::atof(max_str.c_str());
+                    
+                ImGui::DragFloat(label.c_str(), static_cast<float*>(value_ptr), step, min, max);
+            }
+            else
+            {
+                ImGui::InputFloat(label.c_str(), static_cast<float*>(value_ptr), step);
             }
         };
-        m_editor_ui_creator["Vector3"] = [this](const std::string& name, void* value_ptr) -> void {
+        m_editor_ui_creator["Vector3"] = [this](const std::string& name, void* value_ptr, Reflection::FieldAccessor* field_accessor) -> void {
             Vector3* vec_ptr = static_cast<Vector3*>(value_ptr);
             float    val[3]  = {vec_ptr->x, vec_ptr->y, vec_ptr->z};
             if (g_node_depth == -1)
@@ -182,7 +198,7 @@ namespace Piccolo
             vec_ptr->y = val[1];
             vec_ptr->z = val[2];
         };
-        m_editor_ui_creator["Quaternion"] = [this](const std::string& name, void* value_ptr) -> void {
+        m_editor_ui_creator["Quaternion"] = [this](const std::string& name, void* value_ptr, Reflection::FieldAccessor* field_accessor) -> void {
             Quaternion* qua_ptr = static_cast<Quaternion*>(value_ptr);
             float       val[4]  = {qua_ptr->x, qua_ptr->y, qua_ptr->z, qua_ptr->w};
             if (g_node_depth == -1)
@@ -206,7 +222,7 @@ namespace Piccolo
             qua_ptr->z = val[2];
             qua_ptr->w = val[3];
         };
-        m_editor_ui_creator["std::string"] = [this, &asset_folder](const std::string& name, void* value_ptr) -> void {
+        m_editor_ui_creator["std::string"] = [this, &asset_folder](const std::string& name, void* value_ptr, Reflection::FieldAccessor* field_accessor) -> void {
             if (g_node_depth == -1)
             {
                 std::string label = "##" + name;
@@ -423,7 +439,7 @@ namespace Piccolo
                     int   array_count    = array_accessor.getSize(field_instance);
                     
                     m_editor_ui_creator["TreeNodePush"](
-                        std::string(field.getFieldName()) + "[" + std::to_string(array_count) + "]", nullptr);
+                        std::string(field.getFieldName()) + "[" + std::to_string(array_count) + "]", nullptr, nullptr);
                     
                     auto item_type_meta_item =
                         Reflection::TypeMeta::newMetaFromName(array_accessor.getElementTypeName()); //[CR] 获取数据元素的 TypeMeta。
@@ -432,7 +448,7 @@ namespace Piccolo
                     {
                         if (item_ui_creator_iterator == m_editor_ui_creator.end())
                         { //[CR] 没找到对应的 creator，因此数组元素不是原子类型，需要进一步拆分——进一步调用 createClassUI()。
-                            m_editor_ui_creator["TreeNodePush"]("[" + std::to_string(index) + "]", nullptr);
+                            m_editor_ui_creator["TreeNodePush"]("[" + std::to_string(index) + "]", nullptr, nullptr);
 
                             //[CR] 创建该数组元素（array[index]）的 ReflectionInstance。
                             auto object_instance = Reflection::ReflectionInstance(
@@ -442,7 +458,7 @@ namespace Piccolo
                             
                             createClassUI(object_instance);
                             
-                            m_editor_ui_creator["TreeNodePop"]("[" + std::to_string(index) + "]", nullptr);
+                            m_editor_ui_creator["TreeNodePop"]("[" + std::to_string(index) + "]", nullptr, nullptr);
                         }
                         else
                         {
@@ -453,12 +469,16 @@ namespace Piccolo
                             }*/
 
                             //[CR] 数组元素是原子类型，可以直接绘制出来。
+                            
                             m_editor_ui_creator[item_type_meta_item.getTypeName()](
-                                "[" + std::to_string(index) + "]", array_accessor.get(index, field_instance));
+                                "[" + std::to_string(index) + "]"
+                                , array_accessor.get(index, field_instance)
+                                , nullptr //[CR] NOTE: 数组的元素并不能通过 META() 来修饰，所以这里无需处理 meta tags。
+                            );
                         }
                     }
                     
-                    m_editor_ui_creator["TreeNodePop"](field.getFieldName(), nullptr);
+                    m_editor_ui_creator["TreeNodePop"](field.getFieldName(), nullptr, nullptr);
                 }
             }
 
@@ -474,9 +494,9 @@ namespace Piccolo
                         Reflection::ReflectionInstance(field_meta
                             , field.get(instance.m_instance) //[CR] 获取该字段的实例指针。
                         );
-                    m_editor_ui_creator["TreeNodePush"](field_meta.getTypeName(), nullptr);
+                    m_editor_ui_creator["TreeNodePush"](field_meta.getTypeName(), nullptr, nullptr);
                     createClassUI(child_instance);
-                    m_editor_ui_creator["TreeNodePop"](field_meta.getTypeName(), nullptr);
+                    m_editor_ui_creator["TreeNodePop"](field_meta.getTypeName(), nullptr, nullptr);
                 }
                 /*[CR] 这段应该是冗余代码
                 else
@@ -493,8 +513,13 @@ namespace Piccolo
             else
             {
                 //[CR] 本字段为原子类型，直接绘制。
-                m_editor_ui_creator[field.getFieldTypeName()](field.getFieldName(),
-                                                                     field.get(instance.m_instance));
+                Reflection::TypeMeta field_meta;
+                field.getTypeMeta(field_meta);
+                m_editor_ui_creator[field.getFieldTypeName()](
+                    field.getFieldName()
+                    ,field.get(instance.m_instance)
+                    , &field
+                );
             }
         }
         delete[] fields;
@@ -535,12 +560,12 @@ namespace Piccolo
         auto&&                 selected_object_components = selected_object->getComponents();
         for (auto component_ptr : selected_object_components)
         {
-            m_editor_ui_creator["TreeNodePush"](("<" + component_ptr.getTypeName() + ">").c_str(), nullptr);
+            m_editor_ui_creator["TreeNodePush"](("<" + component_ptr.getTypeName() + ">").c_str(), nullptr, nullptr);
             auto object_instance = Reflection::ReflectionInstance(
                 Piccolo::Reflection::TypeMeta::newMetaFromName(component_ptr.getTypeName().c_str()),
                 component_ptr.operator->());
             createClassUI(object_instance);
-            m_editor_ui_creator["TreeNodePop"](("<" + component_ptr.getTypeName() + ">").c_str(), nullptr);
+            m_editor_ui_creator["TreeNodePop"](("<" + component_ptr.getTypeName() + ">").c_str(), nullptr, nullptr);
         }
         ImGui::End();
     }
