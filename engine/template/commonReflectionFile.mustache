@@ -36,6 +36,7 @@ namespace Reflection{
         static void set_{{class_field_name}}(void* instance, void* field_value){ static_cast<{{class_name}}*>(instance)->{{class_field_name}} = *static_cast<{{{class_field_type}}}*>(field_value);}
         static void* get_{{class_field_name}}(void* instance){ return static_cast<void*>(&(static_cast<{{class_name}}*>(instance)->{{class_field_name}}));}
         static bool isArray_{{class_field_name}}(){ {{#class_field_is_vector}}return true;{{/class_field_is_vector}}{{^class_field_is_vector}}return false;{{/class_field_is_vector}} }
+        static const char* getMetaTagsStr_{{class_field_name}}(){ return "{{class_field_meta_tags_str}}"; }
         {{/class_field_defines}}
     };
 }//namespace TypeFieldReflectionOparator
@@ -70,7 +71,9 @@ namespace Reflection{
             &TypeFieldReflectionOparator::Type{{class_name}}Operator::getClassName,
             &TypeFieldReflectionOparator::Type{{class_name}}Operator::getFieldName_{{class_field_name}},
             &TypeFieldReflectionOparator::Type{{class_name}}Operator::getFieldTypeName_{{class_field_name}},
-            &TypeFieldReflectionOparator::Type{{class_name}}Operator::isArray_{{class_field_name}});
+            &TypeFieldReflectionOparator::Type{{class_name}}Operator::isArray_{{class_field_name}},
+            &TypeFieldReflectionOparator::Type{{class_name}}Operator::getMetaTagsStr_{{class_field_name}}
+        );
         REGISTER_FIELD_TO_MAP("{{class_name}}", f_field_function_tuple_{{class_field_name}});
         {{/class_field_defines}}
         

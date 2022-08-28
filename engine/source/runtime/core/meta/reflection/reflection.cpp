@@ -2,8 +2,33 @@
 #include <cstring>
 #include <map>
 
+#include "core/base/macro.h"
+
 namespace Piccolo
 {
+    std::vector<std::string> split(std::string input, std::string pat)
+    {
+        std::vector<std::string> ret_list;
+        while (true)
+        {
+            size_t      index    = input.find(pat);
+            std::string sub_list = input.substr(0, index);
+            if (!sub_list.empty())
+            {
+
+                ret_list.push_back(sub_list);
+            }
+            input.erase(0, index + pat.size());
+            if (index == -1)
+            {
+                break;
+            }
+        }
+        return ret_list;
+    }
+
+
+    
     namespace Reflection
     {
         const char* k_unknown_type = "UnknownType";
@@ -200,6 +225,18 @@ namespace Piccolo
 
             m_field_type_name = (std::get<4>(*m_functions))();
             m_field_name      = (std::get<3>(*m_functions))();
+
+            //[CR] 解析 meta tags 字符串，提取所有的 <tag_name, tag_value>。
+            std::string meta_tags_str = std::get<6>(*m_functions)();
+            auto&& tags = split(meta_tags_str, ",");
+            for (auto& tag : tags)
+            {
+                auto&& kv = split(tag, ":");
+                auto tag_name = kv[0];
+                auto&& tag_value = kv.size() > 1 ? kv[1] : "";
+                m_field_tags[tag_name] = tag_value;
+            }
+            //LOG_INFO("### m_field_name: {}, meta_tags_str: {}", m_field_name, meta_tags_str);
         }
 
         void* FieldAccessor::get(void* instance)
@@ -237,6 +274,17 @@ namespace Piccolo
             return (std::get<5>(*m_functions))();
         }
 
+        bool FieldAccessor::hasMetaTag(const char* name) const
+        {
+            return m_field_tags.find(name) != m_field_tags.end();
+        }
+
+        std::string FieldAccessor::getMetaTagValue(const char* name) const
+        {
+            auto search = m_field_tags.find(name);
+            return search == m_field_tags.end() ? "" : search->second;
+        }
+
         FieldAccessor& FieldAccessor::operator=(const FieldAccessor& dest)
         {
             if (this == &dest)
@@ -246,6 +294,14 @@ namespace Piccolo
             m_functions       = dest.m_functions;
             m_field_name      = dest.m_field_name;
             m_field_type_name = dest.m_field_type_name;
+
+            //[CR] NOTE: 容易被遗漏的地方：对 m_field_tags 进行拷贝构造。
+            m_field_tags.clear();
+            for (auto it = dest.m_field_tags.begin(); it != dest.m_field_tags.end(); ++it)
+            {
+                m_field_tags[it->first] = it->second;
+            }
+            
             return *this;
         }
 

@@ -85,7 +85,7 @@ namespace Piccolo
     typedef std::function<PJson(void*)>                                 WritePJsonByName;
     typedef std::function<int(Reflection::ReflectionInstance*&, void*)> GetBaseClassReflectionInstanceListFunc;
 
-    typedef std::tuple<SetFuncion, GetFuncion, GetNameFuncion, GetNameFuncion, GetNameFuncion, GetBoolFunc>
+    typedef std::tuple<SetFuncion, GetFuncion, GetNameFuncion, GetNameFuncion, GetNameFuncion, GetBoolFunc, GetNameFuncion>
         FieldFunctionTuple;
     typedef std::tuple<GetBaseClassReflectionInstanceListFunc, ConstructorWithPJson, WritePJsonByName>
                                                                                                 ClassFunctionTuple;
@@ -167,6 +167,9 @@ namespace Piccolo
             const char* getFieldTypeName();
             bool        isArrayType();
 
+            bool        hasMetaTag(const char* name) const;
+            std::string getMetaTagValue(const char* name) const;
+
             FieldAccessor& operator=(const FieldAccessor& dest);
 
         private:
@@ -176,6 +179,8 @@ namespace Piccolo
             FieldFunctionTuple* m_functions;
             const char*         m_field_name;
             const char*         m_field_type_name;
+
+            std::unordered_map<std::string, std::string> m_field_tags; //[CR] key: tag_name, value: tag_value(str type)
         };
 
         /**

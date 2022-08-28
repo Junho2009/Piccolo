@@ -53,6 +53,7 @@ namespace Generator
             filed_define.set("class_field_display_name", field->m_display_name);
             bool is_vector = field->m_type.find(vector_prefix) == 0;
             filed_define.set("class_field_is_vector", is_vector);
+            filed_define.set("class_field_meta_tags_str", field->getMetaData().getPropertiesStr());
             feild_defs.push_back(filed_define);
         }
     }
