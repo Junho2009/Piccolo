@@ -182,6 +182,7 @@ namespace Pilot
         }
         for (int i = 1; i < blendStateData.m_clip_count; i++)
         {
+            //[CR] 将 blend_state 中存储的对应各个 pose(AnimationPose) 的混合权重、存储到 Pose 的 m_weight 当中。
             for (auto& pose : poses[i].m_weight.m_blend_weight)
             {
                 pose = blend_state->m_blend_weight[i];

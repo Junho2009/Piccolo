@@ -94,9 +94,9 @@ namespace Pilot
         {
             //TODO: 为了让角色在下落时、碰到墙壁还能落下，这里就需要区分【下落到地面】和【下落到墙壁】两种情况
 
-            final_position += hits[0].hit_distance * vertical_direction;
+            //final_position += hits[0].hit_distance * vertical_direction;
             
-            /*PhysicsHitInfo* vertical_hit = nullptr;
+            PhysicsHitInfo* vertical_hit = nullptr;
             for (auto& hit : hits)
             {
                 const Vector3 hit_normal = hit.hit_normal.normalisedCopy();
@@ -109,8 +109,6 @@ namespace Pilot
                 }
                 else
                 {
-                    int iii = 0;
-                    ++iii;
                     LOG_INFO("vertical_hit++3 ")
                 }
             }
@@ -130,7 +128,7 @@ namespace Pilot
                 //   但是，这样可能会卡在空中，因为加上 vertical_displacement 之后，并不能确保角色可以回到地面。
                 //   然而，目前还没找到能让角色移到地面的信息（和方法）。
                 final_position += vertical_displacement;
-            }*/
+            }
         }
         else
         {

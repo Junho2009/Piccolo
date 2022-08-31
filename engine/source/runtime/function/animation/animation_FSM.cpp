@@ -70,6 +70,8 @@ namespace Pilot
         bool   is_jumping     = tryGetBool(signals, "jumping", false);
         float  speed          = tryGetFloat(signals, "speed", 0);
         bool   is_moving      = speed > 0.01f;
+
+        //NOTE: 表示这样的状态标记：上一帧还是 walk_run（行走中）的状态、而当前帧已经停下来（速度为0）。
         bool   start_walk_end = (States::_walk_run == m_state && !is_moving);//false;
 
         switch (m_state)

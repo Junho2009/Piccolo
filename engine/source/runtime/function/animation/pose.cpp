@@ -54,6 +54,9 @@ void AnimationPose::extractFromClip(std::vector<Transform>& bones, const Animati
 }
 
 
+/**
+ * 进行 当前Pose 跟 指定的另一个pose（通过参数传进来）的混合计算。
+ */
 void AnimationPose::blend(const AnimationPose& pose)
 {
     for (int i = 0; i < m_bone_poses.size(); i++)
@@ -63,14 +66,18 @@ void AnimationPose::blend(const AnimationPose& pose)
 
         float sum_weight = m_weight.m_blend_weight[i] + pose.m_weight.m_blend_weight[i];
         if (sum_weight > 0)
-        {
+        { //[CR] 若两个 pose 的权重都是0，则它们对骨骼最终的 pose 贡献为0，就没必要做混合计算了。
+            
+            //[CR] 计算当前 pose 与 指定pose(即输入参数) 的相对权重，并以此来做 transform 的插值。
             float cur_weight = m_weight.m_blend_weight[i] / sum_weight;
 
             bone_trans_one.m_position = Vector3::lerp(bone_trans_two.m_position, bone_trans_one.m_position, cur_weight);
             bone_trans_one.m_scale    = Vector3::lerp(bone_trans_two.m_scale, bone_trans_one.m_scale, cur_weight);
+
+            //[CR] 为了得到自然的旋转结果，需要将 shortest_path 设为 true。
             bone_trans_one.m_rotation = Quaternion::nLerp(cur_weight, bone_trans_two.m_rotation, bone_trans_one.m_rotation, true);
             
-            m_weight.m_blend_weight[i] = sum_weight;
+            m_weight.m_blend_weight[i] = sum_weight; //[CR] 由于本 pose 已经应用上了跟 这另一个pose(即输入参数) 混合的结果，故把两者的总权重作为自身的新权重。
         }
 
         // float sum_weight =
