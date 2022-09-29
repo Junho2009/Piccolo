@@ -105,6 +105,13 @@ namespace Piccolo
 
             if (iter != m_class_map.end())
             {
+                /** [CR]
+                 * std::get<1>(ClassFunctionTuple)：即 "constructorWithJson" 函数。
+                 *
+                 * 疑问：这里是否不必构造一个 ReflectionInstance 类型的实例，而是直接返回 std::get<1>(*iter->second)(json_context) 的结果即可？
+                 *   从反序列化的需求来讲，确实这样已经足够。之所以这里这样写，我觉得主要是因为本函数是定义在 TypeMeta 中的，因此根据 TypeName 和 json（序列化数据）所创建出来的实例，
+                 *   如果是 ReflectionInstance 会更好用——不单含有实例指针，还包含它的反射数据（TypeMeta），以便在编辑器等地方使用。
+                 */
                 return ReflectionInstance(TypeMeta(type_name), (std::get<1>(*iter->second)(json_context)));
             }
             return ReflectionInstance();

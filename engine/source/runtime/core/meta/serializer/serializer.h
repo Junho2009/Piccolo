@@ -26,11 +26,15 @@ namespace Piccolo
             assert(!type_name.empty());
             if ('*' == type_name[0])
             {
+                /** [CR] 
+                 * 疑问：应该也只有反射类型才会走到这个分支吧？因为接下来的 read 需要处理具体类型的反序列化。
+                 *   如果不是反射类型，按目前版本的实现是找不到对应的处理逻辑的（见 static T& read(const PJson& json_context, T& instance) 这个版本）。
+                 */
                 instance = new T;
                 read(json_context["$context"], *instance);
             }
             else
-            {
+            { //[CR] 这里是专门处理反射类型的反序列化
                 instance = static_cast<T*>(
                     Reflection::TypeMeta::newFromNameAndPJson(type_name, json_context["$context"]).m_instance);
             }
@@ -46,6 +50,12 @@ namespace Piccolo
                                   {"$context", Reflection::TypeMeta::writeByName(type_name, instance_ptr)}};
         }
 
+        /** [CR]
+         * ReflectionPtr 类型的 read：
+         *   参照 asset/level/1-1.level.json 中的数据，以它作为理解其工作原理的例子。
+         *     首先，这个 json 对应的是 LevelRes 类型的资产。它里面有 ObjectInstanceRes 类型的成员，而后者则有 ReflectionPtr<Component> 类型的容器对象。
+         *     从序列化到 json 中的数据得知，这些 "反射类的指针类型"，它们所指向的对象将在本函数中构造出来——详情见 readPointer 的实现。
+         */
         template<typename T>
         static T*& read(const PJson& json_context, Reflection::ReflectionPtr<T>& instance)
         {
@@ -83,6 +93,11 @@ namespace Piccolo
             }
         }
     };
+
+
+    /** [CR]
+     * 以下特化了一些基础类型的 write/read。
+     */
 
     // implementation of base types
     template<>

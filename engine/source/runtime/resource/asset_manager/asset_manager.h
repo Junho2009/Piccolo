@@ -16,6 +16,13 @@ namespace Piccolo
     class AssetManager
     {
     public:
+        /** [CR]
+         * 加载指定的资产
+         * @asset_url 资产路径。
+         *   从调试情况看，形如这样的路径："asset/objects/character/player/components/animation/data/W2_CrouchWalk_Aim_F_Loop_IP.animation_clip.json"。
+         *     p.s.: 这个资产路径，是存储在 AnimationComponent 的序列化数据 "AnimationComponentRes" 之中的。
+         *   经过 getFullPath 的转换之后，路径变成
+         */
         template<typename AssetType>
         bool loadAsset(const std::string& asset_url, AssetType& out_asset) const
         {
@@ -41,6 +48,9 @@ namespace Piccolo
                 return false;
             }
 
+            /** [CR]
+             * 这个 read 函数有多种实现。其中比较特别的是，"PiccoloParser" 为各种反射类型生成了特化版本的 read 函数——根据该类型中的各种反射成员。
+             */
             PSerializer::read(asset_json, out_asset);
             return true;
         }
